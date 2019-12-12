@@ -28,7 +28,7 @@ param (
 . .\lib\Add-Log.ps1
 
 Add-Log info 'Start Domain Controller Session'
-$adCmdLets = 'Get-ADUser', 'Set-ADUser'
+$adCmdLets = 'Get-ADUser', 'Get-ADGroupMember', 'Add-ADGroupMember'
 $adSession = New-PSSession -ComputerName $DomainController -Credential $Credential
 Import-PSSession -Session $adSession -Module ActiveDirectory -CommandName $adCmdLets -AllowClobber | Out-Null
 
