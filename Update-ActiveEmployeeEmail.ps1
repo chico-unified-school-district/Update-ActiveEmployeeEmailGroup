@@ -1,17 +1,17 @@
 <# 
 .SYNOPSIS
- Update Active Directory 'extensionAttribute2' attribute in order to populate 
- 'ActiveEmployeeEmail' Office 365 Dynamic Distribution Group  
+ Update Active Directory ActiveEmployeeEmail Security Group  
 .DESCRIPTION
 .EXAMPLE
- .\Update-EmployeeEmailDynamicGroupMembers.ps1 -DomainController MyDC.us.org -Credential $adtasksCredObj
+ .\Update-ActiveEmployeeEmail.ps1 -DomainController MyDC.us.org -Credential $adtasksCredObj
 .EXAMPLE
- .\Update-EmployeeEmailDynamicGroupMembers.ps1 -DomainController MyDC.us.org -Credential $adtasksCredObj -Verbose -WhatIf
+ .\Update-ActiveEmployeeEmail.ps1 -DomainController MyDC.us.org -Credential $adtasksCredObj -Verbose -WhatIf
 .INPUTS
 .OUTPUTS
 .NOTES
- The user account used to build the crednetial object needs permission to update and clear attributes on Active Directory User objects
+ The user account used to build the credential object needs permission to update the Active Directory group.
 #>
+
 [cmdletbinding()]
 param ( 
  [Parameter(Position = 0, Mandatory = $True)]
@@ -50,8 +50,6 @@ $aDParams = @{
 $staffSams = (Get-Aduser @aDParams | Where-Object { ($_.employeeId -match "\d{4,}") -and ($_.lastLogonDate -gt $cutOffdate) }).samAccountName
 $groupSams = (Get-ADGroupMember -Identity 'ActiveEmployeeEmail').SamAccountName
 
-Add-Log info ('ActiveEmployeeEmail group members: {0}' -f $groupSams.count) -WhatIf:$WhatIf
-
 $missingSams = Compare-Object -ReferenceObject $groupSams -DifferenceObject $staffSams | 
 Where-Object { $_.SideIndicator -eq '=>' }
 if ($missingSams) {
@@ -62,6 +60,9 @@ if ($missingSams) {
  Add-ADGroupMember -Identity 'ActiveEmployeeEmail' -Members ($missingSams).InputObject -WhatIf:$WhatIf
 }
 else { Add-Log info "ActiveEmployeeEmail security group has no missing user objects." }
+
+$groupSams = (Get-ADGroupMember -Identity 'ActiveEmployeeEmail').SamAccountName
+Add-Log info ('ActiveEmployeeEmail group members: {0}' -f $groupSams.count) -WhatIf:$WhatIf
 
 'Tearing down sessions...'
 Get-PSSession | Remove-PSSession
