@@ -1,6 +1,6 @@
 <# 
 .SYNOPSIS
- Update Active Directory ActiveEmployeeEmail Security Group  
+ Update Active Directory ActiveEmployeeEmail Security Group
 .DESCRIPTION
 .EXAMPLE
  .\Update-ActiveEmployeeEmail.ps1 -DomainController MyDC.us.org -Credential $adtasksCredObj
