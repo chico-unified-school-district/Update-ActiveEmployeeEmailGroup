@@ -28,7 +28,7 @@ param (
 . .\lib\Add-Log.ps1
 
 Add-Log info 'Start Domain Controller Session'
-$adCmdLets = 'Get-ADUser', 'Get-ADGroup', 'Get-ADGroupMember', 'Add-ADGroupMember'
+$adCmdLets = 'Get-ADUser', 'Get-ADGroup', 'Get-ADGroupMember', 'Add-ADGroupMember', 'Remove-ADGroupMember'
 $adSession = New-PSSession -ComputerName $DomainController -Credential $Credential
 Import-PSSession -Session $adSession -Module ActiveDirectory -CommandName $adCmdLets -AllowClobber | Out-Null
 
@@ -43,23 +43,23 @@ $aDParams = @{
         ( mail -like "*@*" ) -and
         ( employeeID -like "*" )
     }
-    Properties = 'employeeId', 'lastLogonDate', 'Description'
+    Properties = 'employeeId', 'lastLogonDate', 'Description', 'AccountExpirationDate'
     Searchbase = 'OU=Employees,OU=Users,OU=Domain_Root,DC=chico,DC=usd'
 }
 
-$staffSams = (Get-Aduser @aDParams | Where-Object { (($_.employeeId -match "\d{4,}") -and ($_.lastLogonDate -gt $cutOffdate)) -or ($_.Description -like "*Board*Member*") }).samAccountName
+# Clear Group
+Add-Log query 'Getting current ActiveEmployeeEmail group members'
 $groupSams = (Get-ADGroupMember -Identity 'ActiveEmployeeEmail').SamAccountName
 
-$missingSams = Compare-Object -ReferenceObject $groupSams -DifferenceObject $staffSams | 
-Where-Object { $_.SideIndicator -eq '=>' }
-if ($missingSams) {
-    "Adding missing user objects to ActiveEmployeeEmail group."
-    foreach ($user in ($missingSams).InputObject) {
-        $user
-    }
-    Add-ADGroupMember -Identity 'ActiveEmployeeEmail' -Members ($missingSams).InputObject -WhatIf:$WhatIf
-}
-else { Add-Log info "ActiveEmployeeEmail security group has no missing user objects." }
+Add-Log action 'Clearing ActiveEmployeeEmail group'
+Remove-ADGroupMember 'ActiveEmployeeEmail' $groupSams -Confirm:$false -WhatIf:$WhatIf
+
+Add-Log query 'Getting current, eligible staff members'
+$currentStaffSams = (Get-Aduser @aDParams | Where-Object { (($_.employeeId -match "\d{4,}") -and ($_.lastLogonDate -gt $cutOffdate)) -or ($_.Description -like "*Board*Member*") }).samAccountName
+
+Add-Log action 'Adding current staff to the ActiveEmployeeEmail group'
+# Add-ADGroupMember -Identity 'ActiveEmployeeEmail' -Members ($missingSams).InputObject -WhatIf:$WhatIf
+Add-ADGroupMember -Identity 'ActiveEmployeeEmail' -Members $currentStaffSams -Confirm:$false -WhatIf:$WhatIf
 
 $groupSams = (Get-ADGroupMember -Identity 'ActiveEmployeeEmail').SamAccountName
 Add-Log info ('ActiveEmployeeEmail group members: {0}' -f $groupSams.count) -WhatIf:$WhatIf
