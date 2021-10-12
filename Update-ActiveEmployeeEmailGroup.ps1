@@ -57,7 +57,12 @@ Add-Log action 'Clearing ActiveEmployeeEmail group' -WhatIf:$WhatIf
 Remove-ADGroupMember 'ActiveEmployeeEmail' $groupSams -Confirm:$false -WhatIf:$WhatIf
 
 Add-Log query 'Getting current, eligible staff members'
-$currentStaffSams = (Get-Aduser @aDParams | Where-Object { (($_.employeeId -match "\d{4,}") -and ($_.lastLogonDate -gt $cutOffdate)) -or ($_.Description -like "*Board*Member*") }).samAccountName
+$currentStaffSams = (
+ Get-Aduser @aDParams | Where-Object {
+  (($_.employeeId -match "\d{4,}") -and ($_.lastLogonDate -gt $cutOffdate)) -or
+  ($_.Description -like "*Board*Member*") }
+).samAccountName
+Add-Log info ('Current Staff Count: {0}' -f $currentStaffSams.count)
 
 Add-Log action 'Adding current staff to the ActiveEmployeeEmail group' -WhatIf:$WhatIf
 # Add-ADGroupMember -Identity 'ActiveEmployeeEmail' -Members ($missingSams).InputObject -WhatIf:$WhatIf
