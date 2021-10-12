@@ -14,14 +14,15 @@
 
 [cmdletbinding()]
 param ( 
-    [Parameter(Position = 0, Mandatory = $True)]
-    [Alias('DC', 'Server')]
-    [string]$DomainController, 
-    [Parameter(Position = 1, Mandatory = $True)]
-    [Alias('ADCred')]
-    [System.Management.Automation.PSCredential]$Credential,
-    [Parameter(Position = 3, Mandatory = $false)]
-    [SWITCH]$WhatIf
+ [Parameter(Position = 0, Mandatory = $True)]
+ [Alias('DC', 'Server')]
+ [string]$DomainController, 
+ [Parameter(Position = 1, Mandatory = $True)]
+ [Alias('ADCred')]
+ [System.Management.Automation.PSCredential]$Credential,
+ [int]$MonthsSinceLastLogon,
+ [Parameter(Position = 3, Mandatory = $false)]
+ [SWITCH]$WhatIf
 )
 
 # Imported Functions
@@ -34,17 +35,17 @@ Import-PSSession -Session $adSession -Module ActiveDirectory -CommandName $adCmd
 
 # Check Group
 if ( !(Get-ADGroup -filter { name -eq 'ActiveEmployeeEmail' }) ) {
-    Add-Log error "ActiveEmployeeEmail group does not exist. Please create the group in AD and try again."
+ Add-Log error "ActiveEmployeeEmail group does not exist. Please create the group in AD and try again."
 }
-$cutOffdate = (Get-Date).AddMonths(-6)
+$cutOffdate = (Get-Date).AddMonths(-$MonthsSinceLastLogon)
 
 $aDParams = @{
-    Filter     = {
+ Filter     = {
         ( mail -like "*@*" ) -and
         ( employeeID -like "*" )
-    }
-    Properties = 'employeeId', 'lastLogonDate', 'Description', 'AccountExpirationDate'
-    Searchbase = 'OU=Employees,OU=Users,OU=Domain_Root,DC=chico,DC=usd'
+ }
+ Properties = 'employeeId', 'lastLogonDate', 'Description', 'AccountExpirationDate'
+ Searchbase = 'OU=Employees,OU=Users,OU=Domain_Root,DC=chico,DC=usd'
 }
 
 # Clear Group
