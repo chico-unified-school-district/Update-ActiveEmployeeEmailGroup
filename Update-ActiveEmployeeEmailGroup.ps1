@@ -3,9 +3,9 @@
  Update Active Directory ActiveEmployeeEmail Security Group
 .DESCRIPTION
 .EXAMPLE
- .\Update-ActiveEmployeeEmail.ps1 -DomainController MyDC.us.org -Credential $adtasksCredObj
+ .\Update-ActiveEmployeeEmail.ps1 -DomainController MyDC.us.org -Credential $adtasksCredObj -MonthsSinceLastLogon 18
 .EXAMPLE
- .\Update-ActiveEmployeeEmail.ps1 -DomainController MyDC.us.org -Credential $adtasksCredObj -Verbose -WhatIf
+ .\Update-ActiveEmployeeEmail.ps1 -DomainController MyDC.us.org -Credential $adtasksCredObj -MonthsSinceLastLogon 18 -Verbose -WhatIf
 .INPUTS
 .OUTPUTS
 .NOTES
@@ -42,7 +42,8 @@ $cutOffdate = (Get-Date).AddMonths(-$MonthsSinceLastLogon)
 $aDParams = @{
  Filter     = {
         ( mail -like "*@*" ) -and
-        ( employeeID -like "*" )
+        ( employeeID -like "*" ) -and
+        ( enabled -eq $True )
  }
  Properties = 'employeeId', 'lastLogonDate', 'Description', 'AccountExpirationDate'
  Searchbase = 'OU=Employees,OU=Users,OU=Domain_Root,DC=chico,DC=usd'
@@ -56,7 +57,12 @@ Add-Log action 'Clearing ActiveEmployeeEmail group'
 Remove-ADGroupMember 'ActiveEmployeeEmail' $groupSams -Confirm:$false -WhatIf:$WhatIf
 
 Add-Log query 'Getting current, eligible staff members'
-$currentStaffSams = (Get-Aduser @aDParams | Where-Object { (($_.employeeId -match "\d{4,}") -and ($_.lastLogonDate -gt $cutOffdate)) -or ($_.Description -like "*Board*Member*") }).samAccountName
+$currentStaffSams = (
+ Get-Aduser @aDParams | Where-Object {
+  (($_.employeeId -match "\d{4,}") -and ($_.lastLogonDate -gt $cutOffdate)) -or
+  ($_.Description -like "*Board*Member*") }
+).samAccountName
+Add-Log info ('Current Staff Count: {0}' -f $currentStaffSams.count)
 
 Add-Log action 'Adding current staff to the ActiveEmployeeEmail group'
 # Add-ADGroupMember -Identity 'ActiveEmployeeEmail' -Members ($missingSams).InputObject -WhatIf:$WhatIf
