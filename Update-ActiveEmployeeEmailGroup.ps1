@@ -14,24 +14,31 @@
 
 [cmdletbinding()]
 param (
- [Parameter(Position = 0, Mandatory = $True)]
+ [Parameter(Mandatory = $True)]
  [Alias('DCs')]
  [string[]]$DomainControllers,
- [Parameter(Position = 1, Mandatory = $True)]
+ [Parameter(Mandatory = $True)]
  [Alias('ADCred')]
- [System.Management.Automation.PSCredential]$Credential,
+ [System.Management.Automation.PSCredential]$ADCredential,
  [int]$MonthsSinceLastLogon,
- [Parameter(Position = 3, Mandatory = $false)]
+ [Alias('wi')]
  [SWITCH]$WhatIf
 )
 
 # Imported Functions
 . .\lib\Add-Log.ps1
 
-Add-Log info 'Start Domain Controller Session'
+. .\lib\Clear-SessionData.ps1
+. .\lib\New-ADSession.ps1
+. .\lib\Select-DomainController.ps1
+. .\lib\Show-TestRun.ps1
+
+Show-TestRun
+Clear-SessionData
+
+$dc = Select-DomainController $DomainControllers
 $adCmdLets = 'Get-ADUser', 'Get-ADGroup', 'Get-ADGroupMember', 'Add-ADGroupMember', 'Remove-ADGroupMember'
-$adSession = New-PSSession -ComputerName $DomainController -Credential $Credential
-Import-PSSession -Session $adSession -Module ActiveDirectory -CommandName $adCmdLets -AllowClobber | Out-Null
+New-ADSession -dc $dc -cmdlets $adCmdLets -cred $ADCredential
 
 # Check Group
 if ( !(Get-ADGroup -filter { name -eq 'ActiveEmployeeEmail' }) ) {
@@ -71,5 +78,5 @@ Add-ADGroupMember -Identity 'ActiveEmployeeEmail' -Members $currentStaffSams -Co
 $groupSams = (Get-ADGroupMember -Identity 'ActiveEmployeeEmail').SamAccountName
 Add-Log info ('ActiveEmployeeEmail group members: {0}' -f $groupSams.count) -WhatIf:$WhatIf
 
-'Tearing down sessions...'
-Get-PSSession | Remove-PSSession
+Clear-SessionData
+Show-TestRun
