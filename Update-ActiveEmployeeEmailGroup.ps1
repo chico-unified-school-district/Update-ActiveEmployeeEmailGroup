@@ -1,4 +1,4 @@
-<# 
+<#
 .SYNOPSIS
  Update Active Directory ActiveEmployeeEmail Security Group
 .DESCRIPTION
@@ -13,10 +13,10 @@
 #>
 
 [cmdletbinding()]
-param ( 
+param (
  [Parameter(Position = 0, Mandatory = $True)]
- [Alias('DC', 'Server')]
- [string]$DomainController, 
+ [Alias('DCs')]
+ [string[]]$DomainControllers,
  [Parameter(Position = 1, Mandatory = $True)]
  [Alias('ADCred')]
  [System.Management.Automation.PSCredential]$Credential,
@@ -60,8 +60,8 @@ Add-Log query 'Getting current, eligible staff members'
 $currentStaffSams = (
  Get-Aduser @aDParams | Where-Object {
   (($_.employeeId -match "\d{4,}") -and ($_.lastLogonDate -gt $cutOffdate)) -or
-  ($_.Description -like "*Board*Member*") }
-).samAccountName
+  ($_.Description -like "*Board*Member*")
+ }).samAccountName
 Add-Log info ('Current Staff Count: {0}' -f $currentStaffSams.count)
 
 Add-Log action 'Adding current staff to the ActiveEmployeeEmail group'
