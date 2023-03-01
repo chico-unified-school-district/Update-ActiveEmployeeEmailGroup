@@ -20,7 +20,7 @@ function Clear-Group ($group) {
   Write-Host ('{0},{1},{2}' -f $msg) -Fore Green
  }
  process {
-  Write-Host ('{0}' -f $MyInvocation.MyCommand.Name)
+  Write-Host ('{0},{1}' -f $MyInvocation.MyCommand.Name, $group)
   Remove-ADGroupMember $group $GroupSams -Confirm:$false -WhatIf:$WhatIf
  }
 }
@@ -47,7 +47,7 @@ function Update-GroupMembers ($group) {
   Write-Host ('{0},{1},Count: {2}' -f $msg) -Fore Green
  }
  process {
-  Write-Host ('{0}' -f $MyInvocation.MyCommand.Name)
+  # Write-Host ('{0}' -f $MyInvocation.MyCommand.Name)
   $addMembers = @{
    Identity = $group
    Members  = $currentStaff.samAccountName
