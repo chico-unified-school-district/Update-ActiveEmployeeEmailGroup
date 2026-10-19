@@ -7,9 +7,9 @@ param (
  [Alias('wi')][switch]$WhatIf
 )
 
-function Get-EligibleUsers ($ou, [PSCredential]$cred) {
+function Get-EligibleUsers ($ou, $months, [PSCredential]$cred) {
  process {
-  $cutOffDate = (Get-Date).AddMonths(-$MonthsSinceLastLogon)
+  $cutOffDate = (Get-Date).AddMonths(-$months)
   $filter = "
    mail -like '*' -and
    EmployeeID -like '*' -and
@@ -62,9 +62,9 @@ Show-BlockInfo main
 if ($WhatIf) { Show-TestRun }
 
 $groupUsers = Get-ADGroupMember -Identity $ADGroup -Credential $ADCredential
-$eligibleUsers = Get-EligibleUsers -ou $OrgUnit -cred $ADCredential
-Compare-Object -ReferenceObject $eligibleUsers -DifferenceObject $groupUsers -Property SamAccountName |
- Update-GroupMembership -group $ADGroup -cred $ADCredential
+$eligibleUsers = Get-EligibleUsers -ou $OrgUnit -months $MonthsSinceLastLogon -cred $ADCredential
+# Compare-Object -ReferenceObject $eligibleUsers -DifferenceObject $groupUsers -Property SamAccountName |
+#  Update-GroupMembership -group $ADGroup -cred $ADCredential
 
 $groupUsers = Get-ADGroupMember -Identity $ADGroup -Credential $ADCredential
 Write-Host ('{0},New group count: {1}' -f $MyInvocation.MyCommand.Name, @($groupUsers).Count) -f Green
