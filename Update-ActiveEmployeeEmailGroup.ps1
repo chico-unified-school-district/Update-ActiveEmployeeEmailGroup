@@ -1,3 +1,23 @@
+<#
+.SYNOPSIS
+Updates the Active Directory ActiveEmployeeEmail security group.
+.DESCRIPTION
+Finds enabled users in the given OU that have a mail address and an employee ID, and who have either
+logged on within the given number of months or have a "Board Member" description. Users who are
+eligible but not in the group are added, and group members who are no longer eligible are removed.
+.PARAMETER ADCredential
+PSCredential used for all Active Directory cmdlets.
+.PARAMETER ADGroup
+Security group to update.
+.PARAMETER OrgUnit
+Search base (OU) used to find eligible users.
+.PARAMETER MonthsSinceLastLogon
+Users must have logged on within this many months to be eligible.
+.PARAMETER WhatIf
+Shows the changes that would be made without making them.
+.EXAMPLE
+.\Update-ActiveEmployeeEmailGroup.ps1 -ADCredential $cred -ADGroup 'ActiveEmployeeEmail' -OrgUnit 'OU=Users,DC=example,DC=org' -MonthsSinceLastLogon 6 -WhatIf
+#>
 [cmdletbinding()]
 param (
  [Parameter(Mandatory = $True)][PSCredential]$ADCredential,
